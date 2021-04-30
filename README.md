@@ -8,7 +8,7 @@ make build
    
 2. Download datasets
 Get the FRED API key, see https://research.stlouisfed.org/docs/api/api_key.html
-Store the key in ../storage/resources/fred/key.txt file.
+Store the key in ../storage/resources/fred/key.txt file in plain text, for example `abcdefghijklmnopqrstuvwxyz123456`.
     
 ```bash
 make init-resources
