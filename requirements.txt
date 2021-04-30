@@ -19,6 +19,5 @@ scikit-learn==0.21.3
 statsmodels==0.10.1
 stldecompose==0.0.5
 tables==3.6.1
-tensorflow-gpu==1.13.1
 tqdm==4.38.0
 xlrd==1.2.0
