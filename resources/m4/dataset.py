@@ -30,18 +30,18 @@ class M4Meta:
 
 class M4Dataset(TimeseriesLoader):
     def download(self) -> TimeseriesBundle:
-        m4_info_url = 'https://www.m4.unic.ac.cy/wp-content/uploads/2018/12/M4Info.csv'
-        training_dataset_url = 'https://www.m4.unic.ac.cy/wp-content/uploads/2017/12/M4DataSet.zip'
-        test_dataset_url = 'https://www.m4.unic.ac.cy/wp-content/uploads/2018/07/M-test-set.zip'
+        url_template = 'https://github.com/Mcompetitions/M4-methods/raw/master/Dataset/{}/{}-{}.csv'
+        m4_info_url = 'https://github.com/Mcompetitions/M4-methods/raw/master/Dataset/M4-info.csv'
         m4_info_path = os.path.join(self.path, 'M4info.csv')
-        training_archive_path = os.path.join(self.path, 'training.zip')
-        test_archive_path = os.path.join(self.path, 'test.zip')
 
         ssl._create_default_https_context = ssl._create_unverified_context
 
         download_url(m4_info_url, m4_info_path)
-        download_url(training_dataset_url, training_archive_path)
-        download_url(test_dataset_url, test_archive_path)
+        for sp in M4Meta.seasonal_patterns:
+            training_url = url_template.format("Train", sp, "train")
+            download_url(training_url, os.path.join(M4Meta.dataset_path, f'{sp}-train.csv'))
+            test_url = url_template.format("Test", sp, "test")
+            download_url(test_url, os.path.join(M4Meta.dataset_path, f'{sp}-test.csv'))
 
         # Download naive2 forecasts, needed for OWA metric
         m4_naive2_archive = os.path.join(self.path, 'naive2.rar')
@@ -56,9 +56,6 @@ class M4Dataset(TimeseriesLoader):
                      m4_winner_archive)
         patoolib.extract_archive(m4_winner_archive, outdir=self.path)
         os.remove(m4_winner_archive)
-
-        patoolib.extract_archive(training_archive_path, outdir=self.path)
-        patoolib.extract_archive(test_archive_path, outdir=self.path)
 
         m4_info = pd.read_csv(m4_info_path)
         m4_info.set_index('M4id', inplace=True)
@@ -88,8 +85,18 @@ class M4Dataset(TimeseriesLoader):
 
                 timeseries_info = m4_info.loc[timeseries_id]
 
+                parsing_formats = ['%d-%m-%y %H:%M', '%Y-%m-%d %H:%M:%S']
+                parsed_date = None
+                for parsing_format in parsing_formats:
+                    try:
+                        parsed_date = datetime.strptime(timeseries_info.StartingDate, parsing_format)
+                    except Exception:
+                        continue
+                if parsed_date is None:
+                    raise ValueError(f'Could not parse {timeseries_info.StartingDate} for {timeseries_id}')
+
                 timeseries = Timeseries(id=timeseries_id,
-                                        start_date=datetime.strptime(timeseries_info.StartingDate, '%Y-%m-%d %H:%M:%S'),
+                                        start_date=parsed_date,
                                         time_unit=time_unit,
                                         frequency=frequency,
                                         period=int(timeseries_info.Frequency),
