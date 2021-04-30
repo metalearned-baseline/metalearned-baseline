@@ -170,9 +170,10 @@ class TimeseriesLoader(ABC):
         self.cache_path = os.path.join(path, 'cache.dill')
 
     def build_cache(self) -> None:
-        Path(self.cache_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(self.cache_path, 'wb') as file:
-            dill.dump(self.download(), file)
+        if not os.path.exists(self.cache_path):
+            Path(self.cache_path).parent.mkdir(parents=True, exist_ok=True)
+            with open(self.cache_path, 'wb') as file:
+                dill.dump(self.download(), file)
 
     def load_cache(self) -> TimeseriesBundle:
         with open(self.cache_path, 'rb') as file:
